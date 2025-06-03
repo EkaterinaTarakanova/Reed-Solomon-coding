@@ -21,13 +21,12 @@ namespace ReedSolomon
 
             Console.WriteLine($"Исходное сообщение: {textMessage}");
             Console.WriteLine($"Массив сообщения: [{string.Join(", ", message)}]");
-
-            // Кодируем сообщение
+            
             var codeword = rs.Encode(message);
             Console.WriteLine($"Закодированное слово: [{string.Join(", ", codeword)}]");
 
             var random = new Random();
-            double probability = 0.3; // Исправленная вероятность (в оригинале было 300)
+            double probability = 0.3; 
             int perturbed = 0;
 
             for (int i = 0; i < codeword.Length; i++)
@@ -43,8 +42,7 @@ namespace ReedSolomon
 
             Console.WriteLine($"Количество измененных значений: {perturbed}");
             Console.WriteLine($"Измененное кодовое слово: [{string.Join(", ", codeword)}]");
-
-            // Пытаемся декодировать сообщение
+            
             try
             {
                 var decoded = rs.Decode(codeword);
