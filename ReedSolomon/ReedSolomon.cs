@@ -35,7 +35,6 @@ public class ReedSolomon<T>
         {
             T factor = field.Add(message[i], eccpoly[eccLen - 1]);
             
-            // Shift coefficients right with zero padding
             for (int j = eccLen - 1; j > 0; j--)
                 eccpoly[j] = eccpoly[j - 1];
             eccpoly[0] = field.Zero();
@@ -43,8 +42,7 @@ public class ReedSolomon<T>
             for (int j = 0; j < eccLen; j++)
                 eccpoly[j] = field.Subtract(eccpoly[j], field.Multiply(genpoly[j], factor));
         }
-
-        // Negate ECC values and combine with message
+        
         T[] eccNeg = eccpoly.Select(val => field.Negate(val)).ToArray();
         return eccNeg.Concat(message).ToArray();
     }
@@ -60,7 +58,6 @@ public class ReedSolomon<T>
 
         for (int i = 0; i < eccLen; i++)
         {
-            // Multiply result by (x - genpow)
             for (int j = eccLen; j >= 1; j--)
             {
                 result[j] = field.Multiply(field.Negate(genpow), result[j]);
@@ -72,7 +69,6 @@ public class ReedSolomon<T>
             genpow = field.Multiply(generator, genpow);
         }
         
-        // Trim leading zero coefficients
         return result.Take(eccLen + 1).ToArray();
     }
 
@@ -87,7 +83,6 @@ public class ReedSolomon<T>
         
         T[] syndromes = CalculateSyndromes(codeword);
         
-        // Check if any syndrome is non-zero
         if (syndromes.Any(s => !field.Equals(s, field.Zero())))
         {
             if (errorsToCorrect == 0)
@@ -134,8 +129,7 @@ public class ReedSolomon<T>
     public T[] CalculateErrorLocatorPolynomial(T[] syndromes, int numerrorstocorrect)
     {
         Matrix<T> matrix = new Matrix<T>(numerrorstocorrect, numerrorstocorrect + 1, field);
-    
-        // Заполнение матрицы синдромами
+        
         for (int r = 0; r < numerrorstocorrect; r++)
         {
             for (int c = 0; c <= numerrorstocorrect; c++)
@@ -143,7 +137,7 @@ public class ReedSolomon<T>
                 int index = r + c;
                 T val = (index < syndromes.Length) ? syndromes[index] : field.Zero();
             
-                if (c == numerrorstocorrect) // Последний столбец
+                if (c == numerrorstocorrect) 
                     val = field.Negate(val);
             
                 matrix.Set(r, c, val);
@@ -151,8 +145,7 @@ public class ReedSolomon<T>
         }
     
         matrix.ReducedRowEchelonForm();
-    
-        // Инициализация полинома
+        
         T[] result = new T[numerrorstocorrect + 1];
         result[0] = field.One();
         for (int i = 1; i <= numerrorstocorrect; i++)
@@ -161,19 +154,14 @@ public class ReedSolomon<T>
         for (int row = 0; row < numerrorstocorrect; row++)
         {
             int col = 0;
-            // Поиск ведущего элемента в строке
             while (col < numerrorstocorrect && 
                    field.Equals(matrix.Get(row, col), field.Zero()))
                 col++;
-        
-            // Проверка на несовместность системы
             if (col == numerrorstocorrect)
             {
-                // Все коэффициенты нулевые, но последний столбец ненулевой
                 if (!field.Equals(matrix.Get(row, numerrorstocorrect), field.Zero()))
-                    return null; // Система несовместна
+                    return null; 
             }
-            // Запись коэффициента полинома
             else
             {
                 result[numerrorstocorrect - col] = matrix.Get(row, numerrorstocorrect);
@@ -210,7 +198,6 @@ public class ReedSolomon<T>
         int n = errlocs.Count;
         Matrix<T> matrix = new Matrix<T>(eccLen, n + 1, field);
         
-        // Fill the matrix
         for (int c = 0; c < n; c++)
         {
             T genpow = Pow(generator, errlocs[c]);
@@ -223,13 +210,11 @@ public class ReedSolomon<T>
             }
         }
         
-        // Last column: syndromes
         for (int r = 0; r < eccLen; r++)
             matrix.Set(r, n, syndromes[r]);
         
         matrix.ReducedRowEchelonForm();
         
-        // Check consistency
         T[] errvals = new T[n];
         for (int i = 0; i < n; i++)
         {
